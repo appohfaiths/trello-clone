@@ -30,26 +30,49 @@ function addTask() {
   newTaskName.value = ""
 }
 
-function dropTask(event: any, toColumnIndex: number) {
-  const fromColumnIndex = event.dataTransfer.getData('from-column-index')
-  const fromTaskIndex = event.dataTransfer.getData('from-task-index')
-  boardStore.moveTask({
-    taskIndex: fromTaskIndex,
-    fromColumnIndex,
-    toColumnIndex
-  })
-}
-
 function pickUpTask(event: any, { fromTaskIndex, fromColumnIndex }: { fromTaskIndex: number, fromColumnIndex: number } ) {
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.dropEffect = 'move';
+  event.dataTransfer.setData('type', 'task')
   event.dataTransfer.setData('from-column-index', fromColumnIndex)
   event.dataTransfer.setData('from-task-index', fromTaskIndex)
+}
+
+function pickUpColumn(event: any, fromColumnIndex: number) {
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.dropEffect = 'move';
+  event.dataTransfer.setData('type', 'column')
+  event.dataTransfer.setData('from-column-index', fromColumnIndex)
+}
+
+function dropItem(event: any, toColumnIndex: number) {
+  const type = event.dataTransfer.getData('type')
+  const fromColumnIndex = event.dataTransfer.getData('from-column-index')
+
+  if (type === 'task') {
+    const fromTaskIndex = event.dataTransfer.getData('from-task-index')
+
+    boardStore.moveTask({
+      taskIndex: fromTaskIndex,
+      fromColumnIndex,
+      toColumnIndex
+    })
+  } else if (type === 'column') {
+    boardStore.moveColumn({
+      fromColumnIndex,
+      toColumnIndex
+    })
+  }
 }
 </script>
 
 <template>
-  <UContainer class="column" @dragenter.prevent @dragover.prevent @drop.stop="dropTask($event, columnIndex)">
+  <UContainer class="column"
+  draggable="true"
+  @dragstart.self="pickUpColumn($event, columnIndex)"
+  @dragenter.prevent 
+  @dragover.prevent 
+  @drop.stop="dropItem($event, columnIndex)">
     <div class="column-header mb-4">
       <div>
         <UInput v-if="editNameState" type="text" v-model="column.name" />
